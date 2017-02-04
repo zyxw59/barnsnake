@@ -1,0 +1,4 @@
+*.pyc
+simple.py
+short_subs
+__pycache__
