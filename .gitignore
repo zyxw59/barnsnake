@@ -1,4 +1,5 @@
 *.pyc
+log.txt
 simple.py
 short_subs
 __pycache__

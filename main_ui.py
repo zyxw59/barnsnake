@@ -26,10 +26,6 @@ class MainUI(object):
         if cls._instance is None:
             instance = super().__new__(cls)
             cls._instance = instance
-            if debug:
-                instance.subs = zephyr_utils.loadsubs('short_subs')
-            else:
-                instance.subs = zephyr_utils.loadsubs()
             instance.view = view.View()
             instance._keys = keys
             instance._running = False
@@ -77,6 +73,10 @@ class MainUI(object):
 
     async def _start(self):
         self._running = True
+        if debug:
+            self.subs = await zephyr_utils.loadsubs('short_subs')
+        else:
+            self.subs = await zephyr_utils.loadsubs()
         self._urwid_loop.widget = self._tabbed_window
         self._tabbed_window.set_tab(MainViewTab(), True, 'Main View')
         try:
@@ -193,14 +193,14 @@ class MainViewTab(urwid.WidgetWrap):
             self.view = view
         self.view.on_message.add_observer(self._on_message)
         self._list_walker = urwid.SimpleFocusListWalker(
-                [MessageWidget(text_utils.zephyr_format(msg))
+                [MessageWidget(*text_utils.zephyr_format(msg))
                     for msg in self.view])
         super().__init__(urwid.ListBox(self._list_walker))
 
     def _on_message(self, msg, idx):
         self._list_walker.insert(
                 idx,
-                MessageWidget(text_utils.zephyr_format(msg)))
+                MessageWidget(*text_utils.zephyr_format(msg)))
 
 
 class MessageWidget(urwid.WidgetWrap):
@@ -211,10 +211,30 @@ class MessageWidget(urwid.WidgetWrap):
         else:
             body = urwid.Text('')
         if msg_header is not None:
-            heder = urwid.Text(msg_header)
+            header = urwid.Text(msg_header)
         else:
             header = urwid.Text('')
-        super().__init__(urwid.Pile([('pack', header), ('pack', body)]))
+        focus_widget = (2, FocusMarkerWidget())
+        main_widget = urwid.Pile([('pack', header), ('pack', body)])
+        super().__init__(urwid.Columns([focus_widget, main_widget], dividechars=1))
+
+    def selectable(self):
+        return True
+
+
+class FocusMarkerWidget(urwid.WidgetWrap):
+    _selectable = True
+
+    def __init__(self):
+        self._text = urwid.Text('')
+        super().__init__(self._text)
+
+    def keypress(self, size, key):
+        return key
+
+    def render(self, size, focus=False):
+        self._text.set_text('->' if focus else '')
+        return self._text.render(size, focus)
 
 
 if __name__ == '__main__':

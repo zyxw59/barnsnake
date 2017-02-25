@@ -4,15 +4,9 @@ import zephyr as z
 
 SUBSFILE = os.path.expanduser('~/.zephyr.subs')
 
-def loadsubs(subsfile=SUBSFILE):
+async def loadsubs(subsfile=SUBSFILE):
     subs = z.Subscriptions()
-    with open(subsfile) as sf:
-        for line in sf:
-            triplet = line.rstrip().split(',', 2)
-            if len(triplet) == 0:
-                continue
-            triplet += ['*'] * (3 - len(triplet))
-            subs.add(triplet)
+    subs.sub_all(subsfile)
     return subs
 
 

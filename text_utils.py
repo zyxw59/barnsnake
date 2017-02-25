@@ -13,7 +13,10 @@ class MessageFormatter(object):
 
     def __call__(self, msg):
         """Formats a message."""
-        return var_match.sub(self.subfn(msg), self.fmt_str)
+        if isinstance(self.fmt_str, str):
+            return var_match.sub(self.subfn(msg), self.fmt_str)
+        return tuple(var_match.sub(self.subfn(msg), field)
+                     for field in self.fmt_str)
 
     def subfn(self, msg):
         def outfn(match):
@@ -32,7 +35,7 @@ class MessageFormatter(object):
 
 
 zephyr_format = MessageFormatter(
-    '$cls / $instance / $sender$auth $recipient $time $zsig\n$message',
+    ('$message', '$cls / $instance / $sender$auth $recipient $time $zsig'),
     sender=lambda msg: ('@b({})' if msg['auth'] else '{}').format(pretty_zsender(msg['sender'])),
     auth={True: '', False: '@b(!)'},
     recipient=lambda msg: pretty_zrecipient(msg['recipient']),
